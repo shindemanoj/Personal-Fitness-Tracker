@@ -10,11 +10,14 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
+    Alert,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { getDB, saveDB } from '@/utils/database';
 import { useTheme } from '@react-navigation/native';
+
+import { getDB, saveDB } from '@/utils/database';
+import { calculateTargets } from '@/utils/targetEngine';
 
 export default function IntakeScreen() {
     const { colors } = useTheme();
@@ -38,36 +41,59 @@ export default function IntakeScreen() {
     const next = () => setStep((prev) => prev + 1);
     const back = () => setStep((prev) => prev - 1);
 
+    function validateStep() {
+        if (step === 1) {
+            if (!profile.name || !profile.age) return false;
+        }
+
+        if (step === 2) {
+            if (!profile.heightCm || !profile.weightKg) return false;
+        }
+
+        return true;
+    }
+
     async function finish() {
+        if (!validateStep()) {
+            Alert.alert('Incomplete', 'Please fill all required fields.');
+            return;
+        }
+
         const db = await getDB();
 
-        db.user = {
-            intakeCompleted: true,
-            intakeVersion: 1,
-            profile: {
-                name: profile.name.trim(),
-                age: Number(profile.age),
-                gender: profile.gender as any,
-                heightCm: Number(profile.heightCm),
-                weightKg: Number(profile.weightKg),
-                targetWeightKg: profile.targetWeightKg
-                    ? Number(profile.targetWeightKg)
-                    : undefined,
-                activityLevel: profile.activityLevel as any,
-                fitnessGoal: profile.fitnessGoal as any,
-                experienceLevel: profile.experienceLevel as any,
-                unitSystem: profile.unitSystem as any,
-                injuries: profile.injuries || undefined,
-                createdAt: new Date().toISOString(),
-            },
+        const finalProfile = {
+            name: profile.name.trim(),
+            age: Number(profile.age),
+            gender: profile.gender as any,
+            heightCm: Number(profile.heightCm),
+            weightKg: Number(profile.weightKg),
+            targetWeightKg: profile.targetWeightKg
+                ? Number(profile.targetWeightKg)
+                : undefined,
+            activityLevel: profile.activityLevel as any,
+            fitnessGoal: profile.fitnessGoal as any,
+            experienceLevel: profile.experienceLevel as any,
+            unitSystem: profile.unitSystem as any,
+            injuries: profile.injuries || undefined,
+            createdAt: new Date().toISOString(),
         };
 
+        const targets = calculateTargets(finalProfile);
+
+        db.user.intakeCompleted = true;
+        db.user.intakeVersion = 2;
+        db.user.profile = finalProfile;
+        db.user.targets = targets;
+
         await saveDB(db);
+
         router.replace('/(tabs)/home');
     }
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView
+            style={[styles.container, { backgroundColor: colors.background }]}
+        >
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -86,6 +112,7 @@ export default function IntakeScreen() {
                             Less than 60 seconds
                         </Text>
 
+                        {/* STEP 1 */}
                         {step === 1 && (
                             <>
                                 <Input
@@ -114,6 +141,7 @@ export default function IntakeScreen() {
                             </>
                         )}
 
+                        {/* STEP 2 */}
                         {step === 2 && (
                             <>
                                 <Input
@@ -146,6 +174,7 @@ export default function IntakeScreen() {
                             </>
                         )}
 
+                        {/* STEP 3 */}
                         {step === 3 && (
                             <>
                                 <Selector
@@ -192,6 +221,7 @@ export default function IntakeScreen() {
                             </>
                         )}
 
+                        {/* STEP 4 */}
                         {step === 4 && (
                             <>
                                 <Selector
@@ -218,6 +248,7 @@ export default function IntakeScreen() {
                             </>
                         )}
 
+                        {/* FOOTER */}
                         <View style={styles.footer}>
                             {step > 1 && (
                                 <Pressable onPress={back}>
@@ -233,7 +264,16 @@ export default function IntakeScreen() {
                                         styles.primaryButton,
                                         { backgroundColor: colors.primary },
                                     ]}
-                                    onPress={next}
+                                    onPress={() => {
+                                        if (!validateStep()) {
+                                            Alert.alert(
+                                                'Incomplete',
+                                                'Please fill required fields.'
+                                            );
+                                            return;
+                                        }
+                                        next();
+                                    }}
                                 >
                                     <Text style={styles.primaryText}>
                                         Continue
@@ -260,7 +300,7 @@ export default function IntakeScreen() {
     );
 }
 
-/* ---------------- Components ---------------- */
+/* ================= COMPONENTS ================= */
 
 function Input({ label, ...props }: any) {
     const { colors } = useTheme();
@@ -317,7 +357,6 @@ function Selector({ label, options, value, onSelect }: any) {
                             <Text
                                 style={{
                                     color: isActive ? '#fff' : colors.text,
-                                    fontWeight: '500',
                                 }}
                             >
                                 {opt}
@@ -330,7 +369,7 @@ function Selector({ label, options, value, onSelect }: any) {
     );
 }
 
-/* ---------------- Styles ---------------- */
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
     container: { flex: 1 },

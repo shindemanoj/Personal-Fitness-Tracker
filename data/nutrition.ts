@@ -25,7 +25,7 @@ export const nutritionFramework: NutritionFramework = {
     ----------------------------------- */
 
     calories: "2,300–2,400 kcal",
-    protein: "155–165g per day",
+    protein: "125–135g per day",
     carbs: "200–230g per day",
     fats: "65–75g per day",
     water: "3–3.5 liters per day",
@@ -45,6 +45,7 @@ export const nutritionFramework: NutritionFramework = {
 
         postWorkout: [
             "1 scoop whey OR 200–250g high-protein yogurt",
+            "1 scoop creatine",
             "Banana if heavy session",
         ],
 

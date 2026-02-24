@@ -3,6 +3,8 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="expo-gradle-plugin" target="23" />
+      <module name="gradle-plugin-root.react-native-gradle-plugin.test" target="11" />
+      <module name="gradle-plugin-root.settings-plugin.test" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

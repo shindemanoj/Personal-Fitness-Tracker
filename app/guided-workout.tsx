@@ -1,71 +1,76 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet, Alert, BackHandler } from 'react-native';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import Svg, { Circle } from 'react-native-svg';
 
-import { week1Schedule } from '../../data/week1';
-import { buildWorkoutTimeline } from '../../utils/workoutEngine';
-import { getDB, saveDB } from '../../utils/database';
+import { week1Schedule } from '../data/week1';
+import { buildWorkoutTimeline } from '../utils/workoutEngine';
+import { getDB, saveDB } from '../utils/database';
 
 export default function GuidedWorkout() {
     const { dayIndex } = useLocalSearchParams();
-    const day = week1Schedule[Number(dayIndex)];
-    const timeline = buildWorkoutTimeline(day);
+    const router = useRouter();
+
+    const parsedIndex = Number(dayIndex ?? 0);
+
+    const day = useMemo(() => {
+        return week1Schedule[parsedIndex];
+    }, [parsedIndex]);
+
+    const timeline = useMemo(() => {
+        return day ? buildWorkoutTimeline(day) : [];
+    }, [day]);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [secondsLeft, setSecondsLeft] = useState(
         timeline[0]?.duration ?? 0
     );
     const [isPaused, setIsPaused] = useState(false);
+    const [isFinished, setIsFinished] = useState(false);
 
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);    const silentSoundRef = useRef<Audio.Sound | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     const current = timeline[currentIndex];
     const isRest = current?.type === 'rest';
 
     /* ---------------------------
-       BACKGROUND AUDIO SUPPORT
+       SAFE AUDIO MODE
     ---------------------------- */
     useEffect(() => {
-        async function enableBackgroundMode() {
-            await Audio.setAudioModeAsync({
-                staysActiveInBackground: true,
-                shouldDuckAndroid: true,
-            });
-
-            const { sound } = await Audio.Sound.createAsync(
-                require('../../assets/silence.mp3'),
-                { isLooping: true, volume: 0.01 }
-            );
-
-            silentSoundRef.current = sound;
-            await sound.playAsync();
-        }
-
-        enableBackgroundMode();
-
-        return () => {
-            silentSoundRef.current?.unloadAsync();
-        };
+        Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldDuckAndroid: true,
+        });
     }, []);
 
     /* ---------------------------
-       SPEECH
+       SPEAK HELPER
     ---------------------------- */
     function speak(text: string) {
         Speech.stop();
-        Speech.speak(text, {
-            rate: 0.9,
-            pitch: 1.0,
-        });
+        Speech.speak(text, { rate: 0.9 });
     }
+
+    /* ---------------------------
+       AUTO ANNOUNCE FIRST STEP
+    ---------------------------- */
+    useEffect(() => {
+        if (timeline.length > 0) {
+            speak(timeline[0].label);
+        }
+    }, [timeline]);
 
     /* ---------------------------
        STEP TRANSITION
     ---------------------------- */
     async function nextStep() {
+        if (!timeline.length) return;
+
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         if (currentIndex < timeline.length - 1) {
@@ -83,18 +88,33 @@ export default function GuidedWorkout() {
             const prev = currentIndex - 1;
             setCurrentIndex(prev);
             setSecondsLeft(timeline[prev].duration);
+            speak(timeline[prev].label);
         }
     }
 
     /* ---------------------------
-       COMPLETE WORKOUT
+       COMPLETE WORKOUT SAFELY
     ---------------------------- */
-    function finishWorkout() {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-        }
+    async function finishWorkout() {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+
         Speech.stop();
-        markWorkoutComplete();
+        setIsFinished(true);
+
+        await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success
+        );
+
+        speak("Workout complete. Great job.");
+
+        await markWorkoutComplete();
+
+        Alert.alert("🔥 Workout Complete!", "You crushed it today.", [
+            {
+                text: "Back to Plan",
+                onPress: () => router.replace('/(tabs)/workout'),
+            },
+        ]);
     }
 
     async function markWorkoutComplete() {
@@ -104,27 +124,35 @@ export default function GuidedWorkout() {
         db.workout.completions = db.workout.completions || {};
         db.workout.streak = db.workout.streak || 0;
 
-        db.workout.completions[todayKey] = true;
-        db.workout.streak += 1;
-
-        await saveDB(db);
+        // 🔥 IMPORTANT: Prevent double streak farming
+        if (!db.workout.completions[todayKey]) {
+            db.workout.completions[todayKey] = true;
+            db.workout.streak += 1;
+            await saveDB(db);
+        }
     }
 
     /* ---------------------------
        TIMER ENGINE
     ---------------------------- */
     useEffect(() => {
-        if (isPaused) return;
+        if (isPaused || isFinished || !current) return;
 
         intervalRef.current = setInterval(() => {
             setSecondsLeft((prev) => {
-                if (prev === 3) {
-                    Haptics.notificationAsync(
-                        Haptics.NotificationFeedbackType.Warning
-                    );
+                const halfway = Math.floor(current.duration / 2);
+
+                if (prev === halfway) speak("Halfway");
+                if (prev === 4) speak("Three");
+                if (prev === 3) speak("Two");
+                if (prev === 2) speak("One");
+                if (prev === 1) speak("Switch");
+
+                if (prev <= 5 && prev > 0) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
 
-                if (prev <= 1) {
+                if (prev < 1) {
                     nextStep();
                     return 0;
                 }
@@ -133,25 +161,51 @@ export default function GuidedWorkout() {
             });
         }, 1000);
 
-        return () => clearInterval(intervalRef.current!);
-    }, [currentIndex, isPaused]);
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [currentIndex, isPaused, isFinished, current]);
 
     /* ---------------------------
        PROGRESS
     ---------------------------- */
     const workoutProgress =
-        (currentIndex / timeline.length) * 100;
+        timeline.length > 0
+            ? (currentIndex / timeline.length) * 100
+            : 0;
 
     const stepProgress =
-        ((current?.duration - secondsLeft) /
-            current?.duration) *
-        100;
+        current && current.duration
+            ? ((current.duration - secondsLeft) /
+                current.duration) *
+            100
+            : 0;
 
     const radius = 110;
     const strokeWidth = 12;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset =
         circumference - (stepProgress / 100) * circumference;
+
+    const intensityColor = useMemo(() => {
+        if (!current) return '#22C55E';
+        if (secondsLeft <= 3) return '#EF4444';
+        if (secondsLeft <= 8) return '#F59E0B';
+        return '#22C55E';
+    }, [secondsLeft, current]);
+
+    /* ---------------------------
+       SAFE EMPTY STATE
+    ---------------------------- */
+    if (!timeline.length) {
+        return (
+            <View style={styles.center}>
+                <Text style={{ color: '#fff' }}>
+                    No workout available.
+                </Text>
+            </View>
+        );
+    }
 
     /* ---------------------------
        UI
@@ -160,17 +214,16 @@ export default function GuidedWorkout() {
         <View
             style={[
                 styles.container,
-                { backgroundColor: isRest ? '#111827' : '#0f172a' },
+                { backgroundColor: isRest ? '#0B1220' : '#000000' },
             ]}
         >
             <Text style={styles.section}>{current?.section}</Text>
-            <Text style={styles.round}>Round {current?.round}</Text>
+            <Text style={styles.round}>Round {current?.round || '-'}</Text>
 
-            {/* Circular Timer */}
-            <View style={{ alignItems: 'center', marginVertical: 30 }}>
+            <View style={styles.circleWrapper}>
                 <Svg width={260} height={260}>
                     <Circle
-                        stroke="#1f2937"
+                        stroke="#1A1A1A"
                         fill="none"
                         cx="130"
                         cy="130"
@@ -178,7 +231,7 @@ export default function GuidedWorkout() {
                         strokeWidth={strokeWidth}
                     />
                     <Circle
-                        stroke="#22c55e"
+                        stroke={intensityColor}
                         fill="none"
                         cx="130"
                         cy="130"
@@ -187,27 +240,39 @@ export default function GuidedWorkout() {
                         strokeDasharray={circumference}
                         strokeDashoffset={strokeDashoffset}
                         strokeLinecap="round"
-                        rotation="-90"
-                        origin="130,130"
+                        transform={`rotate(-90 130 130)`}
                     />
                 </Svg>
 
-                <Text style={styles.timer}>{secondsLeft}s</Text>
+                <View style={styles.timerContainer}>
+                    <Text style={[styles.timer, { color: intensityColor }]}>
+                        {secondsLeft}
+                    </Text>
+                    <Text style={styles.secondsLabel}>sec</Text>
+                </View>
             </View>
 
-            <Text style={styles.label}>{current?.label}</Text>
+            <Text
+                style={[
+                    styles.label,
+                    isRest && { color: '#9CA3AF', fontWeight: '500' },
+                ]}
+            >
+                {current?.label}
+            </Text>
 
-            {/* Workout Progress Bar */}
             <View style={styles.progressBar}>
                 <View
                     style={[
                         styles.progressFill,
-                        { width: `${workoutProgress}%` },
+                        {
+                            width: `${workoutProgress}%`,
+                            backgroundColor: intensityColor,
+                        },
                     ]}
                 />
             </View>
 
-            {/* Controls */}
             <View style={styles.controls}>
                 <Pressable onPress={previousStep}>
                     <Text style={styles.control}>◀</Text>
@@ -227,56 +292,92 @@ export default function GuidedWorkout() {
     );
 }
 
-/* ---------------------------
-   STYLES
----------------------------- */
+/* ----------------------------- */
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 50,
+        paddingBottom: 40,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    center: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        backgroundColor: '#000',
     },
     section: {
-        fontSize: 14,
-        opacity: 0.6,
-        marginBottom: 5,
+        fontSize: 12,
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        color: '#6B7280',
+        marginBottom: 6,
     },
     round: {
         fontSize: 18,
-        marginBottom: 10,
+        fontWeight: '600',
+        color: '#E5E7EB',
+        marginBottom: 28,
     },
     label: {
-        fontSize: 22,
+        fontSize: 28,
+        fontWeight: '700',
         textAlign: 'center',
-        marginTop: 10,
+        color: '#FFFFFF',
+        marginTop: 20,
+        paddingHorizontal: 16,
+    },
+    circleWrapper: {
+        width: 260,
+        height: 260,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    timerContainer: {
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     timer: {
-        position: 'absolute',
-        fontSize: 48,
-        fontWeight: 'bold',
-        color: '#fff',
+        fontSize: 72,
+        fontWeight: '800',
+        letterSpacing: 2,
+    },
+    secondsLabel: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginTop: -4,
     },
     progressBar: {
-        height: 6,
-        width: '80%',
-        backgroundColor: '#1f2937',
-        marginTop: 30,
-        borderRadius: 6,
+        height: 4,
+        width: '100%',
+        backgroundColor: '#1A1A1A',
+        borderRadius: 4,
+        marginTop: 40,
+        overflow: 'hidden',
     },
     progressFill: {
-        height: 6,
-        backgroundColor: '#22c55e',
-        borderRadius: 6,
+        height: 4,
+        borderRadius: 4,
     },
     controls: {
         flexDirection: 'row',
-        gap: 50,
-        marginTop: 40,
+        justifyContent: 'space-between',
+        width: '80%',
+        marginTop: 50,
     },
     control: {
-        fontSize: 28,
-        color: '#fff',
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        backgroundColor: '#111111',
+        paddingVertical: 18,
+        paddingHorizontal: 24,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#1F2937',
     },
 });

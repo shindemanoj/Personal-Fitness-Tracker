@@ -26,11 +26,23 @@ export async function scheduleSmartReminders() {
         });
     }
 
+    await Notifications.scheduleNotificationAsync({
+        content: {
+            title: '6-Pack Discipline',
+            body: 'Train. No excuses.',
+            sound: true,
+        },
+        trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+            repeats: true,
+        },
+    });
+
     // 💧 Water Reminder
     await Notifications.scheduleNotificationAsync({
         content: {
-            title: '💧 Hydration Check',
-            body: 'Time to drink water.',
+            title: '💧 Stay Hydrated',
+            body: 'Drink Water if needed.',
             sound: true,
         },
         trigger: {
@@ -44,7 +56,7 @@ export async function scheduleSmartReminders() {
     await Notifications.scheduleNotificationAsync({
         content: {
             title: '🥩 Protein Reminder',
-            body: 'Add protein if needed.',
+            body: 'Eat protein if needed.',
             sound: true,
         },
         trigger: {
@@ -58,7 +70,7 @@ export async function scheduleSmartReminders() {
     await Notifications.scheduleNotificationAsync({
         content: {
             title: '💊 Supplement Reminder',
-            body: 'Take your vitamins.',
+            body: 'Did you take all of your vitamins?',
             sound: true,
         },
         trigger: {

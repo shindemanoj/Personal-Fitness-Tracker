@@ -1,5 +1,5 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, Pressable, View, Alert, StyleSheet } from 'react-native';
+import { ScrollView, Pressable, View, Alert, StyleSheet, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
@@ -8,13 +8,20 @@ import { getDB, checkDailyReset } from '../../utils/database';
 import { scheduleSmartReminders } from '../../utils/reminders';
 import { week1Schedule } from '../../data/week1';
 
-export default function Index() {
+export default function Home() {
     const router = useRouter();
 
-    const proteinTarget = 125;
-    const waterTarget = 3000;
+    const [userName, setUserName] = useState('Athlete');
+
+    /* ---- Targets ---- */
+    const [calorieTarget, setCalorieTarget] = useState(2200);
+    const [proteinTarget, setProteinTarget] = useState(120);
+    const [waterTarget, setWaterTarget] = useState(3000);
+    const [fatTarget, setFatTarget] = useState(60);
+
     const totalVitamins = 6;
 
+    /* ---- Current Metrics ---- */
     const [protein, setProtein] = useState(0);
     const [water, setWater] = useState(0);
     const [vitaminsChecked, setVitaminsChecked] = useState(0);
@@ -37,22 +44,40 @@ export default function Index() {
         await checkDailyReset();
         const db = await getDB();
 
-        setProtein(db.metrics.protein);
-        setWater(db.metrics.water);
+        const profile = db.user?.profile;
+        const targets = db.user?.targets;
+
+        if (profile) {
+            setUserName(profile.name || 'Athlete');
+        }
+
+        if (targets) {
+            setCalorieTarget(targets.calorieTarget ?? 2200);
+            setProteinTarget(targets.proteinTarget ?? 120);
+            setWaterTarget(targets.waterTarget ?? 3000);
+            setFatTarget(targets.fatsTarget ?? 60);
+        }
+
+        setProtein(db.metrics.protein ?? 0);
+        setWater(db.metrics.water ?? 0);
+
         setVitaminsChecked(
-            Object.values(db.metrics.vitamins).filter(Boolean).length
+            Object.values(db.metrics.vitamins || {}).filter(Boolean).length
         );
-        setStreak(db.workout.streak || 0);
+
+        setStreak(db.workout.streak ?? 0);
     }
 
     const hour = new Date().getHours();
     const greeting =
-        hour < 12 ? 'Good Morning'
-            : hour < 18 ? 'Good Afternoon'
+        hour < 12
+            ? 'Good Morning'
+            : hour < 18
+                ? 'Good Afternoon'
                 : 'Good Evening';
 
     const percent = (value: number, total: number) =>
-        Math.min((value / total) * 100, 100);
+        total > 0 ? Math.min((value / total) * 100, 100) : 0;
 
     /* -------------------------
        START WORKOUT
@@ -86,7 +111,9 @@ export default function Index() {
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>{greeting}</Text>
+                        <Text style={styles.greeting}>
+                            {greeting}, {userName}
+                        </Text>
                         <Text style={styles.streak}>
                             {streak} day streak
                         </Text>
@@ -99,15 +126,28 @@ export default function Index() {
 
                 {/* Metrics */}
                 <View style={styles.card}>
+
+                    <Metric
+                        label="Calories"
+                        value={`${calorieTarget} kcal target`}
+                        percent={100}
+                    />
+
                     <Metric
                         label="Protein"
-                        value={`${protein}g`}
+                        value={`${protein}g / ${proteinTarget}g`}
                         percent={percent(protein, proteinTarget)}
                     />
 
                     <Metric
+                        label="Fat"
+                        value={`${fatTarget}g target`}
+                        percent={100}
+                    />
+
+                    <Metric
                         label="Water"
-                        value={`${water} ml`}
+                        value={`${water} ml / ${waterTarget} ml`}
                         percent={percent(water, waterTarget)}
                     />
 
@@ -140,6 +180,7 @@ export default function Index() {
 /* --------------------------------
    Metric Component
 -------------------------------- */
+
 function Metric({
                     label,
                     value,
@@ -172,45 +213,37 @@ function Metric({
    STYLES
 -------------------------------- */
 
-import { Text } from 'react-native';
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000000',
     },
-
     content: {
         paddingHorizontal: 24,
         paddingTop: 30,
         paddingBottom: 40,
     },
-
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 40,
     },
-
     greeting: {
         fontSize: 28,
         fontWeight: '700',
         color: '#FFFFFF',
     },
-
     streak: {
         marginTop: 6,
         fontSize: 14,
         color: '#6B7280',
     },
-
     link: {
         fontSize: 14,
         color: '#22C55E',
         fontWeight: '600',
     },
-
     card: {
         backgroundColor: '#111111',
         borderRadius: 20,
@@ -219,38 +252,32 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#1F2937',
     },
-
     metricRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 8,
     },
-
     metricLabel: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#9CA3AF',
         letterSpacing: 1,
         textTransform: 'uppercase',
     },
-
     metricValue: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         color: '#FFFFFF',
     },
-
     progressTrack: {
         height: 4,
         backgroundColor: '#1F2937',
         borderRadius: 4,
         overflow: 'hidden',
     },
-
     progressFill: {
         height: 4,
         backgroundColor: '#22C55E',
     },
-
     cta: {
         backgroundColor: '#22C55E',
         paddingVertical: 18,
@@ -258,19 +285,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 16,
     },
-
     ctaText: {
         fontSize: 16,
         fontWeight: '700',
         color: '#000000',
         letterSpacing: 1,
     },
-
     secondary: {
         alignItems: 'center',
         paddingVertical: 12,
     },
-
     secondaryText: {
         color: '#6B7280',
         fontSize: 14,

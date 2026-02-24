@@ -1,153 +1,201 @@
 export const week1Schedule = [
+    // ================= MONDAY =================
     {
         day: "Monday",
         title: "Full Body + Pull Strength",
         sections: [
             {
-                title: "Warm-up (10 min)",
+                title: "Warm-Up",
+                rounds: 1,
                 exercises: [
-                    "3 min skipping",
-                    "15 hip hinges",
-                    "10 scapular pull-ups",
+                    { name: "Skipping", duration: 180 },
+                    { name: "Hip Hinges ×15", duration: 120 },
+                    { name: "Scap Pull-ups 2×5", duration: 180 },
+                    { name: "Mobility + Plank", duration: 120 },
                 ],
+                restBetweenRounds: 60
             },
             {
-                title: "Workout (4 rounds)",
+                title: "Main Workout",
+                rounds: 4,
+                restBetweenRounds: 90,
                 exercises: [
-                    "20 kg KB Swings ×15",
-                    "Goblet Squat (20 kg) ×12",
-                    "Assisted / Band Pull-ups ×6–8 (or 3 negatives 5 sec down)",
-                    "Push-ups ×12",
-                ],
+                    { name: "KB Swings ×15", duration: 30, restAfter: 30 },
+                    { name: "Goblet Squat ×12", duration: 40, restAfter: 30 },
+                    { name: "Pull-ups / Negatives", duration: 30, restAfter: 40 },
+                    { name: "Push-ups ×12", duration: 30 }
+                ]
             },
             {
-                title: "Core (3 rounds)",
+                title: "Core",
+                rounds: 3,
+                restBetweenRounds: 60,
                 exercises: [
-                    "Plank 45 sec",
-                    "Dead bug ×10 each side",
-                ],
-            },
-        ],
+                    { name: "Plank", duration: 45, restAfter: 20 },
+                    { name: "Dead Bug ×10/side", duration: 40, restAfter: 30 }
+                ]
+            }
+        ]
     },
+
+    // ================= TUESDAY =================
     {
         day: "Tuesday",
-        title: "Upper Body Width Focus",
+        title: "Upper Width",
         sections: [
             {
-                title: "Warm-up",
+                title: "Warm-Up",
+                rounds: 1,
                 exercises: [
-                    "Dead hang 30 sec ×2",
-                    "Arm circles",
+                    { name: "Dead Hang", duration: 30, restAfter: 30 },
+                    { name: "Dead Hang", duration: 30 },
+                    { name: "Arm Circles", duration: 120 }
                 ],
+                restBetweenRounds: 60
             },
             {
-                title: "Workout (4 rounds)",
+                title: "Workout",
+                rounds: 4,
+                restBetweenRounds: 75,
                 exercises: [
-                    "Pull-ups ×6–8 (or negatives)",
-                    "10 kg KB Overhead Press ×10 each side",
-                    "10 kg KB Row ×12 each side",
-                    "4 kg Lateral Raise ×15",
-                ],
+                    { name: "Pull-ups ×6–8", duration: 30, restAfter: 30 },
+                    { name: "KB Press ×10/side", duration: 45, restAfter: 30 },
+                    { name: "KB Row ×12/side", duration: 45, restAfter: 30 },
+                    { name: "Lateral Raise ×15", duration: 35 }
+                ]
             },
             {
-                title: "Core (3 rounds)",
+                title: "Core",
+                rounds: 3,
+                restBetweenRounds: 60,
                 exercises: [
-                    "Hanging knee raises ×12",
-                    "Russian twists (10 kg) ×20",
-                ],
-            },
-        ],
+                    { name: "Hanging Knee Raises ×12", duration: 30, restAfter: 20 },
+                    { name: "Russian Twists ×20", duration: 40, restAfter: 30 }
+                ]
+            }
+        ]
     },
+
+    // ================= WEDNESDAY =================
     {
         day: "Wednesday",
         title: "Lower Body + Conditioning",
         sections: [
             {
-                title: "Workout (4 rounds)",
+                title: "Strength",
+                rounds: 4,
+                restBetweenRounds: 90,
                 exercises: [
-                    "20 kg Goblet Squats ×15",
-                    "Reverse Lunges (10 kg) ×12 each leg",
-                    "20 kg Swings ×20",
-                    "Glute bridge ×15",
-                ],
+                    { name: "Goblet Squat ×15", duration: 45, restAfter: 30 },
+                    { name: "Reverse Lunges ×12/leg", duration: 50, restAfter: 30 },
+                    { name: "KB Swings ×20", duration: 40, restAfter: 30 },
+                    { name: "Glute Bridge ×15", duration: 30 }
+                ]
             },
             {
-                title: "Finisher (3x)",
+                title: "Finisher",
+                rounds: 3,
                 exercises: [
-                    "100 skipping jumps",
-                ],
-            },
-        ],
+                    { name: "Skipping ×100", duration: 70, restAfter: 45 }
+                ]
+            }
+        ]
     },
+
+    // ================= THURSDAY =================
     {
         day: "Thursday",
-        title: "Active Recovery + Grip",
+        title: "Active Recovery",
         sections: [
             {
-                title: "Recovery",
+                title: "Cardio",
+                rounds: 1,
                 exercises: [
-                    "20–30 min brisk walk",
-                    "Dead hang 3 × 30–45 sec",
-                    "Core vacuum 5 × 20 sec",
-                    "Light mobility",
-                ],
+                    { name: "Brisk Walk", duration: 1800 }
+                ]
             },
-        ],
+            {
+                title: "Mobility & Core",
+                rounds: 3,
+                exercises: [
+                    { name: "Dead Hang", duration: 45, restAfter: 45 }
+                ]
+            },
+            {
+                title: "Vacuum",
+                rounds: 5,
+                exercises: [
+                    { name: "Vacuum Hold", duration: 20, restAfter: 20 }
+                ]
+            }
+        ]
     },
+
+    // ================= FRIDAY =================
     {
         day: "Friday",
         title: "Conditioning + Back Thickness",
         sections: [
             {
-                title: "Circuit (5 rounds)",
+                title: "Main Workout",
+                rounds: 5,
+                restBetweenRounds: 90,
                 exercises: [
-                    "20 kg Swings ×20",
-                    "Pull-ups ×6–8",
-                    "Push-ups ×15",
-                    "Goblet Squats ×15",
-                ],
+                    { name: "KB Swings ×20", duration: 40, restAfter: 30 },
+                    { name: "Pull-ups ×6–8", duration: 30, restAfter: 30 },
+                    { name: "Push-ups ×15", duration: 40, restAfter: 30 },
+                    { name: "Goblet Squat ×15", duration: 45 }
+                ]
             },
             {
-                title: "Core (3 rounds)",
+                title: "Core",
+                rounds: 3,
+                restBetweenRounds: 60,
                 exercises: [
-                    "Hanging knee raises ×15",
-                    "Side plank 45 sec each side",
-                ],
-            },
-        ],
+                    { name: "Hanging Knee Raises ×15", duration: 30, restAfter: 20 },
+                    { name: "Side Plank (Each Side)", duration: 90, restAfter: 30 }
+                ]
+            }
+        ]
     },
+
+    // ================= SATURDAY =================
     {
         day: "Saturday",
-        title: "High Intensity + Core Control",
+        title: "HIIT",
         sections: [
             {
-                title: "HIIT",
+                title: "HIIT Swings",
+                rounds: 10,
                 exercises: [
-                    "30 sec swings",
-                    "30 sec rest",
-                    "Repeat 10 rounds",
-                ],
+                    { name: "KB Swings", duration: 30, restAfter: 30 }
+                ]
             },
             {
-                title: "Core (3 rounds)",
+                title: "Core Circuit",
+                rounds: 3,
                 exercises: [
-                    "Pull-up hold 10–15 sec",
-                    "Dead bug ×12",
-                    "Reverse crunch ×15",
-                ],
-            },
-        ],
+                    { name: "Pull-up Hold", duration: 15, restAfter: 30 },
+                    { name: "Dead Bug ×12", duration: 40, restAfter: 20 },
+                    { name: "Reverse Crunch ×15", duration: 40, restAfter: 30 }
+                ]
+            }
+        ]
     },
+
+    // ================= SUNDAY =================
     {
         day: "Sunday",
         title: "Rest",
         sections: [
             {
                 title: "Recovery",
+                rounds: 1,
                 exercises: [
-                    "8–10k steps",
-                ],
-            },
-        ],
-    },
+                    { name: "8–10k Steps", duration: 3600 },
+                    { name: "Light Stretching", duration: 600 }
+                ]
+            }
+        ]
+    }
 ];

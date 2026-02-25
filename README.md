@@ -1,50 +1,100 @@
-# Welcome to your Expo app 👋
+# Personal Fitness Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A minimalist fitness tracking app built with **React Native + Expo**.
 
-## Get started
+Track workouts, protein, water, vitamins, and daily streaks --- all
+powered by a smart target engine that personalizes nutrition goals
+automatically.
 
-1. Install dependencies
+------------------------------------------------------------------------
 
-   ```bash
-   npm install
-   ```
+## Features
 
-2. Start the app
+-   Smart calorie & macro target calculation
+-   Protein, water, and supplement tracking
+-   Daily workout plan with guided sessions
+-   Workout streak tracking
+-   Daily reset logic (10 AM local time)
+-   Clean dark minimalist UI
+-   Local offline database (AsyncStorage)
+-   Smart reminders (Expo Notifications)
 
-   ```bash
-   npx expo start
-   ```
+------------------------------------------------------------------------
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+-   React Native (Expo)
+-   TypeScript
+-   Expo Router
+-   AsyncStorage
+-   Expo Notifications
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+------------------------------------------------------------------------
 
-## Get a fresh project
+## Target Engine
 
-When you're ready, run:
+Targets are automatically calculated based on:
 
-```bash
-npm run reset-project
-```
+-   Weight
+-   Goal (Fat Loss / Strength / Recomposition)
+-   Activity Level
+-   Experience Level
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+The app calculates:
 
-## Learn more
+-   Calories
+-   Protein
+-   Carbs
+-   Fats
+-   Water
 
-To learn more about developing your project with Expo, look at the following resources:
+Targets update automatically when profile changes.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+------------------------------------------------------------------------
 
-## Join the community
+## Project Structure
 
-Join our community of developers creating universal apps.
+/app\
+/(tabs)\
+intake.tsx\
+profile.tsx\
+nutrition.tsx\
+progress.tsx\
+workout.tsx
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+/utils\
+database.ts\
+targetEngine.ts\
+reminders.ts
+
+------------------------------------------------------------------------
+
+## Setup
+
+1.  Install dependencies
+
+npm install
+
+2.  Start development server
+
+npx expo start
+
+3.  Build for production
+
+eas build -p ios\
+eas build -p android
+
+------------------------------------------------------------------------
+
+## App Store Notes
+
+-   Uses push notifications for reminders
+-   No third-party data sharing
+-   Data stored locally on device
+-   Privacy Policy required before release
+
+------------------------------------------------------------------------
+
+## License
+
+© 2026 Manoj Shinde. All rights reserved.

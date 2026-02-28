@@ -102,12 +102,17 @@ export default function ProfileScreen() {
         }
     }
 
-    if (loading || !profile) {
+    if (loading) {
         return (
             <SafeAreaView style={styles.center}>
                 <ActivityIndicator size="large" color="#22C55E" />
             </SafeAreaView>
         );
+    }
+
+    if (!profile) {
+        router.replace('/intake');
+        return null;
     }
 
     return (
